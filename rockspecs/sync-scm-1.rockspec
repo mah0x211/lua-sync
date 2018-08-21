@@ -34,6 +34,11 @@ build = {
             incdirs = { "deps/lauxhlib" },
             sources = { "src/semaphore.c" },
         },
+        ['sync.mutex'] = {
+            incdirs = { "deps/lauxhlib" },
+            sources = { "src/mutex.c" },
+            libraries = { "pthread" },
+        },
     },
 }
 
