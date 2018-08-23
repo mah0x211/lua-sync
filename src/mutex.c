@@ -51,6 +51,7 @@ static int trylock_lua( lua_State *L )
     return 1;
 }
 
+
 static int lock_lua( lua_State *L )
 {
     sync_lockop_lua( L, sync_mutex_t, SYNC_MUTEX_MT, sync_mutex_lock );
@@ -71,7 +72,8 @@ static int destroy_lua( lua_State *L )
         if( sync_mutex_destroy( m->mutex ) ){
             lua_pushboolean( L, 0 );
             lua_pushstring( L, strerror( errno ) );
-            return 2;
+            lua_pushboolean( L, errno == EBUSY );
+            return 3;
         }
         sync_mutex_free( m->mutex );
         m->mutex = NULL;
