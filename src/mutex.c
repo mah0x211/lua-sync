@@ -36,7 +36,19 @@ static int unlock_lua( lua_State *L )
 
 static int trylock_lua( lua_State *L )
 {
-    sync_lockop_lua( L, sync_mutex_t, SYNC_MUTEX_MT, sync_mutex_trylock );
+    sync_mutex_t *m = luaL_checkudata( L, 1, SYNC_MUTEX_MT );
+
+    if( m->locked == 0 && sync_mutex_trylock( m->mutex ) ){
+        lua_pushboolean( L, 0 );
+        lua_pushstring( L, strerror( errno ) );
+        lua_pushboolean( L, errno == EBUSY );
+        return 3;
+    }
+
+    m->locked = 1;
+    lua_pushboolean( L, 1 );
+
+    return 1;
 }
 
 static int lock_lua( lua_State *L )
