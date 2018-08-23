@@ -39,6 +39,10 @@ build = {
             sources = { "src/mutex.c" },
             libraries = { "pthread" },
         },
+        ['sync.cond'] = {
+            incdirs = { "deps/lauxhlib" },
+            sources = { "src/cond.c" },
+        },
     },
 }
 

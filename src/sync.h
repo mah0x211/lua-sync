@@ -178,4 +178,27 @@ typedef struct {
 LUALIB_API int luaopen_sync_mutex( lua_State *L );
 
 
+
+#define SYNC_COND_MT    "sync.cond"
+
+typedef struct {
+    int locked;
+    int ref;
+    pthread_cond_t *cond;
+    pthread_mutex_t *mutex;
+} sync_cond_t;
+
+#define sync_cond_alloc()       sync_pthread_alloc(cond)
+#define sync_cond_free(c)       sync_shmfree(pthread_cond_t, c)
+#define sync_cond_signal(c)     sync_pthread_op(pthread_cond_signal, c)
+#define sync_cond_broadcast(c)  sync_pthread_op(pthread_cond_broadcast, c)
+#define sync_cond_destroy(c)    sync_pthread_op(pthread_cond_destroy, c)
+#define sync_cond_wait(c, m)    sync_pthread_op(pthread_cond_wait, c, m)
+#define sync_cond_timedwait(c, m, t) \
+    sync_pthread_op(pthread_cond_timedwait, c, m, t)
+
+LUALIB_API int luaopen_sync_cond( lua_State *L );
+
+
+
 #endif
