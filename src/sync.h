@@ -160,6 +160,18 @@ LUALIB_API int luaopen_sync_semaphore( lua_State *L );
 }while(0)
 
 
+#define sync_unlockop_lua(L, t, tname, unlockfn) do{    \
+    t *v = luaL_checkudata( L, 1, (tname) );            \
+    if( v->locked == 1 && unlockfn( v->mutex ) ){       \
+        lua_pushboolean( L, 0 );                        \
+        lua_pushstring( L, strerror( errno ) );         \
+        return 2;                                       \
+    }                                                   \
+    v->locked = 0;                                      \
+    lua_pushboolean( L, 1 );                            \
+    return 1;                                           \
+}while(0)
+
 
 #define SYNC_MUTEX_MT   "sync.mutex"
 

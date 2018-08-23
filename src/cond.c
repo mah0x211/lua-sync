@@ -109,18 +109,7 @@ static int signal_lua( lua_State *L )
 
 static int unlock_lua( lua_State *L )
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
-
-    if( c->locked == 1 && sync_mutex_unlock( c->mutex ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
-        return 2;
-    }
-
-    c->locked = 0;
-    lua_pushboolean( L, 1 );
-
-    return 1;
+    sync_unlockop_lua( L, sync_cond_t, SYNC_COND_MT, sync_mutex_unlock );
 }
 
 

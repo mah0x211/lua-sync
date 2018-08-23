@@ -30,18 +30,7 @@
 
 static int unlock_lua( lua_State *L )
 {
-    sync_mutex_t *m = luaL_checkudata( L, 1, SYNC_MUTEX_MT );
-
-    if( m->locked == 1 && sync_mutex_unlock( m->mutex ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
-        return 2;
-    }
-
-    m->locked = 0;
-    lua_pushboolean( L, 1 );
-
-    return 1;
+    sync_unlockop_lua( L, sync_mutex_t, SYNC_MUTEX_MT, sync_mutex_unlock );
 }
 
 
