@@ -133,18 +133,7 @@ static int trylock_lua( lua_State *L )
 
 static int lock_lua( lua_State *L )
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
-
-    if( c->locked == 0 && sync_mutex_lock( c->mutex ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
-        return 2;
-    }
-
-    c->locked = 1;
-    lua_pushboolean( L, 1 );
-
-    return 1;
+    sync_lockop_lua( L, sync_cond_t, SYNC_COND_MT, sync_mutex_lock );
 }
 
 
@@ -157,7 +146,8 @@ static int destroy_lua( lua_State *L )
         if( sync_cond_destroy( c->cond ) ){
             lua_pushboolean( L, 0 );
             lua_pushstring( L, strerror( errno ) );
-            return 2;
+            lua_pushboolean( L, errno == EBUSY );
+            return 3;
         }
         sync_cond_free( c->cond );
         c->cond = NULL;
@@ -173,7 +163,8 @@ static int destroy_lua( lua_State *L )
         if( sync_mutex_destroy( c->mutex ) ){
             lua_pushboolean( L, 0 );
             lua_pushstring( L, strerror( errno ) );
-            return 2;
+            lua_pushboolean( L, errno == EBUSY );
+            return 3;
         }
         sync_mutex_free( c->mutex );
         c->mutex = NULL;
