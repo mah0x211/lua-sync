@@ -57,7 +57,8 @@ static int timedwait_lua( lua_State *L )
     if( sync_cond_timedwait( c->cond, c->mutex, &abstime ) ){
         lua_pushboolean( L, 0 );
         lua_pushstring( L, strerror( errno ) );
-        return 2;
+        lua_pushboolean( L, errno == ETIMEDOUT );
+        return 3;
     }
 
     lua_pushboolean( L, 1 );
