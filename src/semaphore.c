@@ -41,8 +41,9 @@ static int trywait_lua( lua_State *L )
 
     lua_pushboolean( L, 0 );
     lua_pushstring( L, strerror( errno ) );
+    lua_pushboolean( L, errno == EAGAIN );
 
-    return 2;
+    return 3;
 }
 
 
