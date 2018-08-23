@@ -120,7 +120,8 @@ static int trylock_lua( lua_State *L )
     if( c->locked == 0 && sync_mutex_trylock( c->mutex ) ){
         lua_pushboolean( L, 0 );
         lua_pushstring( L, strerror( errno ) );
-        return 2;
+        lua_pushboolean( L, errno == EBUSY );
+        return 3;
     }
 
     c->locked = 1;
