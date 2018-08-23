@@ -33,8 +33,8 @@ static int timedwait_lua( lua_State *L )
 {
     sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
     lua_Number sec = lauxh_checknumber( L, 2 );
-    double fsec = 0.0;
-    double isec = modf( sec, &fsec );
+    double isec = 0.0;
+    double fsec = modf( sec, &isec );
     struct timespec abstime = { 0 };
 
     lauxh_argcheck( L, sec >= 0, 2, "sec must be greater or equal to 0" );
@@ -45,8 +45,15 @@ static int timedwait_lua( lua_State *L )
     clock_gettime( CLOCK_REALTIME, &abstime );
 #endif
 
-    abstime.tv_sec += isec;
-    abstime.tv_nsec += fsec * 1000 * 1000 * 1000;
+    abstime.tv_nsec += fsec * 1000000000ULL;
+    if( abstime.tv_nsec > 1000000000ULL ){
+        abstime.tv_sec += isec + abstime.tv_nsec / 1000000000ULL;
+        abstime.tv_nsec %= 1000000000ULL;
+    }
+    else {
+        abstime.tv_sec += isec;
+    }
+
     if( sync_cond_timedwait( c->cond, c->mutex, &abstime ) ){
         lua_pushboolean( L, 0 );
         lua_pushstring( L, strerror( errno ) );
