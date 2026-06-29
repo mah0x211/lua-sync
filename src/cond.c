@@ -28,229 +28,212 @@
 #include "sync.h"
 #include <math.h>
 
-
-static int timedwait_lua( lua_State *L )
+static int timedwait_lua(lua_State *L)
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
-    lua_Number sec = lauxh_checknumber( L, 2 );
-    double isec = 0.0;
-    double fsec = modf( sec, &isec );
-    struct timespec abstime = { 0 };
+    sync_cond_t *c          = luaL_checkudata(L, 1, SYNC_COND_MT);
+    lua_Number sec          = lauxh_checknumber(L, 2);
+    double isec             = 0.0;
+    double fsec             = modf(sec, &isec);
+    struct timespec abstime = {0};
 
-    lauxh_argcheck( L, sec >= 0, 2, "sec must be greater or equal to 0" );
+    lauxh_argcheck(L, sec >= 0, 2, "sec must be greater or equal to 0");
 
 #if defined(CLOCK_REALTIME_COARSE)
-    clock_gettime( CLOCK_REALTIME_COARSE, &abstime );
+    clock_gettime(CLOCK_REALTIME_COARSE, &abstime);
 #else
-    clock_gettime( CLOCK_REALTIME, &abstime );
+    clock_gettime(CLOCK_REALTIME, &abstime);
 #endif
 
     abstime.tv_nsec += fsec * 1000000000ULL;
-    if( abstime.tv_nsec > 1000000000ULL ){
+    if (abstime.tv_nsec > 1000000000ULL) {
         abstime.tv_sec += isec + abstime.tv_nsec / 1000000000ULL;
         abstime.tv_nsec %= 1000000000ULL;
-    }
-    else {
+    } else {
         abstime.tv_sec += isec;
     }
 
-    if( sync_cond_timedwait( c->cond, c->mutex, &abstime ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
-        lua_pushboolean( L, errno == ETIMEDOUT );
+    if (sync_cond_timedwait(c->cond, c->mutex, &abstime)) {
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, strerror(errno));
+        lua_pushboolean(L, errno == ETIMEDOUT);
         return 3;
     }
 
-    lua_pushboolean( L, 1 );
+    lua_pushboolean(L, 1);
 
     return 1;
 }
 
-
-static int wait_lua( lua_State *L )
+static int wait_lua(lua_State *L)
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
+    sync_cond_t *c = luaL_checkudata(L, 1, SYNC_COND_MT);
 
-    if( sync_cond_wait( c->cond, c->mutex ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
+    if (sync_cond_wait(c->cond, c->mutex)) {
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, strerror(errno));
         return 2;
     }
 
-    lua_pushboolean( L, 1 );
+    lua_pushboolean(L, 1);
 
     return 1;
 }
 
-
-static int broadcast_lua( lua_State *L )
+static int broadcast_lua(lua_State *L)
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
+    sync_cond_t *c = luaL_checkudata(L, 1, SYNC_COND_MT);
 
-    if( sync_cond_broadcast( c->cond ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
+    if (sync_cond_broadcast(c->cond)) {
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, strerror(errno));
         return 2;
     }
 
-    lua_pushboolean( L, 1 );
+    lua_pushboolean(L, 1);
 
     return 1;
 }
 
-
-static int signal_lua( lua_State *L )
+static int signal_lua(lua_State *L)
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
+    sync_cond_t *c = luaL_checkudata(L, 1, SYNC_COND_MT);
 
-    if( sync_cond_signal( c->cond ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
+    if (sync_cond_signal(c->cond)) {
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, strerror(errno));
         return 2;
     }
 
-    lua_pushboolean( L, 1 );
+    lua_pushboolean(L, 1);
 
     return 1;
 }
 
-
-static int unlock_lua( lua_State *L )
+static int unlock_lua(lua_State *L)
 {
-    sync_unlockop_lua( L, sync_cond_t, SYNC_COND_MT, sync_mutex_unlock );
+    sync_unlockop_lua(L, sync_cond_t, SYNC_COND_MT, sync_mutex_unlock);
 }
 
-
-static int trylock_lua( lua_State *L )
+static int trylock_lua(lua_State *L)
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
+    sync_cond_t *c = luaL_checkudata(L, 1, SYNC_COND_MT);
 
-    if( c->locked == 0 && sync_mutex_trylock( c->mutex ) ){
-        lua_pushboolean( L, 0 );
-        lua_pushstring( L, strerror( errno ) );
-        lua_pushboolean( L, errno == EBUSY );
+    if (c->locked == 0 && sync_mutex_trylock(c->mutex)) {
+        lua_pushboolean(L, 0);
+        lua_pushstring(L, strerror(errno));
+        lua_pushboolean(L, errno == EBUSY);
         return 3;
     }
 
     c->locked = 1;
-    lua_pushboolean( L, 1 );
+    lua_pushboolean(L, 1);
 
     return 1;
 }
 
-
-static int lock_lua( lua_State *L )
+static int lock_lua(lua_State *L)
 {
-    sync_lockop_lua( L, sync_cond_t, SYNC_COND_MT, sync_mutex_lock );
+    sync_lockop_lua(L, sync_cond_t, SYNC_COND_MT, sync_mutex_lock);
 }
 
-
-static int destroy_lua( lua_State *L )
+static int destroy_lua(lua_State *L)
 {
-    sync_cond_t *c = luaL_checkudata( L, 1, SYNC_COND_MT );
+    sync_cond_t *c = luaL_checkudata(L, 1, SYNC_COND_MT);
 
-    if( c->cond )
-    {
-        if( sync_cond_destroy( c->cond ) ){
-            lua_pushboolean( L, 0 );
-            lua_pushstring( L, strerror( errno ) );
-            lua_pushboolean( L, errno == EBUSY );
+    if (c->cond) {
+        if (sync_cond_destroy(c->cond)) {
+            lua_pushboolean(L, 0);
+            lua_pushstring(L, strerror(errno));
+            lua_pushboolean(L, errno == EBUSY);
             return 3;
         }
-        sync_cond_free( c->cond );
+        sync_cond_free(c->cond);
         c->cond = NULL;
     }
 
-    if( c->mutex )
-    {
-        if( c->locked ){
+    if (c->mutex) {
+        if (c->locked) {
             c->locked = 0;
-            sync_mutex_unlock( c->mutex );
+            sync_mutex_unlock(c->mutex);
         }
 
-        if( sync_mutex_destroy( c->mutex ) ){
-            lua_pushboolean( L, 0 );
-            lua_pushstring( L, strerror( errno ) );
-            lua_pushboolean( L, errno == EBUSY );
+        if (sync_mutex_destroy(c->mutex)) {
+            lua_pushboolean(L, 0);
+            lua_pushstring(L, strerror(errno));
+            lua_pushboolean(L, errno == EBUSY);
             return 3;
         }
-        sync_mutex_free( c->mutex );
+        sync_mutex_free(c->mutex);
         c->mutex = NULL;
     }
 
-    lua_pushboolean( L, 1 );
+    lua_pushboolean(L, 1);
 
     return 1;
 }
 
-
-static int tostring_lua( lua_State *L )
+static int tostring_lua(lua_State *L)
 {
-    lua_pushfstring( L, SYNC_COND_MT ": %p", lua_touserdata( L, 1 ) );
+    lua_pushfstring(L, SYNC_COND_MT ": %p", lua_touserdata(L, 1));
     return 1;
 }
 
-
-static int gc_lua( lua_State *L )
+static int gc_lua(lua_State *L)
 {
-    sync_cond_t *c = lua_touserdata( L, 1 );
+    sync_cond_t *c = lua_touserdata(L, 1);
 
-    if( c->locked ){
+    if (c->locked) {
         c->locked = 0;
-        sync_mutex_unlock( c->mutex );
+        sync_mutex_unlock(c->mutex);
     }
 
     return 0;
 }
 
-
-static int new_lua( lua_State *L )
+static int new_lua(lua_State *L)
 {
-    lua_settop( L, 0 );
-    sync_cond_t *c = lua_newuserdata( L, sizeof( sync_cond_t ) );
+    lua_settop(L, 0);
+    sync_cond_t *c = lua_newuserdata(L, sizeof(sync_cond_t));
 
     c->locked = 0;
-    if( ( c->mutex = sync_mutex_alloc() ) )
-    {
-        if( ( c->cond = sync_cond_alloc() ) ){
-            lauxh_setmetatable( L, SYNC_COND_MT );
+    if ((c->mutex = sync_mutex_alloc())) {
+        if ((c->cond = sync_cond_alloc())) {
+            lauxh_setmetatable(L, SYNC_COND_MT);
             return 1;
         }
-        sync_mutex_free( c->mutex );
+        sync_mutex_free(c->mutex);
     }
 
-    lua_pushnil( L );
-    lua_pushstring( L, strerror( errno ) );
+    lua_pushnil(L);
+    lua_pushstring(L, strerror(errno));
 
     return 2;
 }
 
-
-LUALIB_API int luaopen_sync_cond( lua_State *L )
+LUALIB_API int luaopen_sync_cond(lua_State *L)
 {
     struct luaL_Reg mmethods[] = {
-        { "__gc", gc_lua },
-        { "__tostring", tostring_lua },
-        { NULL, NULL }
+        {"__gc",       gc_lua      },
+        {"__tostring", tostring_lua},
+        {NULL,         NULL        }
     };
     struct luaL_Reg methods[] = {
-        { "destroy", destroy_lua },
-        { "lock", lock_lua },
-        { "trylock", trylock_lua },
-        { "unlock", unlock_lua },
-        { "signal", signal_lua },
-        { "broadcast", broadcast_lua },
-        { "wait", wait_lua },
-        { "timedwait", timedwait_lua },
-        { NULL, NULL }
+        {"destroy",   destroy_lua  },
+        {"lock",      lock_lua     },
+        {"trylock",   trylock_lua  },
+        {"unlock",    unlock_lua   },
+        {"signal",    signal_lua   },
+        {"broadcast", broadcast_lua},
+        {"wait",      wait_lua     },
+        {"timedwait", timedwait_lua},
+        {NULL,        NULL         }
     };
 
-    sync_register( L, SYNC_COND_MT, mmethods, methods );
+    sync_register(L, SYNC_COND_MT, mmethods, methods);
 
     // add new function
-    lua_newtable( L );
-    lauxh_pushfn2tbl( L, "new", new_lua );
+    lua_newtable(L);
+    lauxh_pushfn2tbl(L, "new", new_lua);
 
     return 1;
 }
-
