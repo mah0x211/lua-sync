@@ -2,16 +2,11 @@
 
 lua-sync provides basic synchronization primitives.
 
-## Dependencies
-
-- luarocks-fetch-gitrec: <https://github.com/siffiejoe/luarocks-fetch-gitrec>
-- lauxhlib: <https://github.com/mah0x211/lauxhlib>
-
 
 ## Installation
 
 ```bash
-$ luarocks install sync --from=http://mah0x211.github.io/rocks/
+luarocks install sync
 ```
 
 
