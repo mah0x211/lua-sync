@@ -11,6 +11,13 @@ description = {
 }
 dependencies = {
     "lua >= 5.1",
+    "lauxhlib >= 0.5.0",
+}
+external_dependencies = {
+    PTHREAD = {
+        header = "pthread.h",
+        library = "pthread",
+    },
 }
 build = {
     type = "builtin",
@@ -35,16 +42,16 @@ build = {
     },
     modules = {
         ["sync.semaphore"] = {
-            incdirs = {
-                "deps/lauxhlib",
-            },
             sources = {
                 "src/semaphore.c",
             },
         },
         ["sync.mutex"] = {
             incdirs = {
-                "deps/lauxhlib",
+                "$(PTHREAD_INCDIR)",
+            },
+            libdirs = {
+                "$(PTHREAD_LIBDIR)",
             },
             sources = {
                 "src/mutex.c",
@@ -55,7 +62,10 @@ build = {
         },
         ["sync.cond"] = {
             incdirs = {
-                "deps/lauxhlib",
+                "$(PTHREAD_INCDIR)",
+            },
+            libdirs = {
+                "$(PTHREAD_LIBDIR)",
             },
             sources = {
                 "src/cond.c",
