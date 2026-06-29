@@ -25,7 +25,10 @@
  *
  */
 
+// project
 #include "sync.h"
+
+// system
 #include <math.h>
 
 static int timedwait_lua(lua_State *L)
@@ -45,7 +48,7 @@ static int timedwait_lua(lua_State *L)
 #endif
 
     abstime.tv_nsec += fsec * 1000000000ULL;
-    if (abstime.tv_nsec > 1000000000ULL) {
+    if ((unsigned long long)abstime.tv_nsec > 1000000000ULL) {
         abstime.tv_sec += isec + abstime.tv_nsec / 1000000000ULL;
         abstime.tv_nsec %= 1000000000ULL;
     } else {

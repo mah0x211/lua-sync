@@ -28,6 +28,10 @@
 #ifndef lua_sync_h
 #define lua_sync_h
 
+// depend
+#include "lauxhlib.h"
+
+// system
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -37,8 +41,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-// lua
-#include "lauxhlib.h"
 
 // helper macros
 static inline void sync_register(lua_State *L, const char *tname,

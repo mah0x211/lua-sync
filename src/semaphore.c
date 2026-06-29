@@ -25,7 +25,10 @@
  *
  */
 
+// project
 #include "sync.h"
+
+// system
 #include <math.h>
 #include <semaphore.h>
 
