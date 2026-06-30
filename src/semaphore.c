@@ -25,118 +25,113 @@
  *
  */
 
+// project
 #include "sync.h"
+
+// system
 #include <math.h>
 #include <semaphore.h>
 
-
-static int trywait_lua( lua_State *L )
+static int trywait_lua(lua_State *L)
 {
-    sync_sem_t *s = luaL_checkudata( L, 1, SYNC_SEMAPHORE_MT );
+    sync_sem_t *s = luaL_checkudata(L, 1, SYNC_SEMAPHORE_MT);
 
-    if( sem_trywait( s->sem ) == 0 ){
-        lua_pushboolean( L, 1 );
+    if (sem_trywait(s->sem) == 0) {
+        lua_pushboolean(L, 1);
         return 1;
     }
 
-    lua_pushboolean( L, 0 );
-    lua_pushstring( L, strerror( errno ) );
-    lua_pushboolean( L, errno == EAGAIN );
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, strerror(errno));
+    lua_pushboolean(L, errno == EAGAIN);
 
     return 3;
 }
 
-
-static int wait_lua( lua_State *L )
+static int wait_lua(lua_State *L)
 {
-    sync_sem_t *s = luaL_checkudata( L, 1, SYNC_SEMAPHORE_MT );
+    sync_sem_t *s = luaL_checkudata(L, 1, SYNC_SEMAPHORE_MT);
 
-    if( sem_wait( s->sem ) == 0 ){
-        lua_pushboolean( L, 1 );
+    if (sem_wait(s->sem) == 0) {
+        lua_pushboolean(L, 1);
         return 1;
     }
 
-    lua_pushboolean( L, 0 );
-    lua_pushstring( L, strerror( errno ) );
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, strerror(errno));
 
     return 2;
 }
 
-
-static int post_lua( lua_State *L )
+static int post_lua(lua_State *L)
 {
-    sync_sem_t *s = luaL_checkudata( L, 1, SYNC_SEMAPHORE_MT );
+    sync_sem_t *s = luaL_checkudata(L, 1, SYNC_SEMAPHORE_MT);
 
-    if( sem_post( s->sem ) == 0 ){
-        lua_pushboolean( L, 1 );
+    if (sem_post(s->sem) == 0) {
+        lua_pushboolean(L, 1);
         return 1;
     }
 
-    lua_pushboolean( L, 0 );
-    lua_pushstring( L, strerror( errno ) );
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, strerror(errno));
 
     return 2;
 }
 
-
-static int close_lua( lua_State *L )
+static int close_lua(lua_State *L)
 {
-    sync_sem_t *s = luaL_checkudata( L, 1, SYNC_SEMAPHORE_MT );
+    sync_sem_t *s = luaL_checkudata(L, 1, SYNC_SEMAPHORE_MT);
 
-    if( s->sem ){
-        sync_sem_free( s->sem );
+    if (s->sem) {
+        sync_sem_free(s->sem);
         s->sem = NULL;
     }
 
     return 0;
 }
 
-
-static int tostring_lua( lua_State *L )
+static int tostring_lua(lua_State *L)
 {
-    lua_pushfstring( L, SYNC_SEMAPHORE_MT ": %p", lua_touserdata( L, 1 ) );
+    lua_pushfstring(L, SYNC_SEMAPHORE_MT ": %p", lua_touserdata(L, 1));
     return 1;
 }
 
-
-static int new_lua( lua_State *L )
+static int new_lua(lua_State *L)
 {
-    lua_settop( L, 0 );
-    sync_sem_t *s = lua_newuserdata( L, sizeof( sync_sem_t ) );
-    uint32_t n = lauxh_optuint32( L, 2, 0 );
+    lua_settop(L, 0);
+    sync_sem_t *s = lua_newuserdata(L, sizeof(sync_sem_t));
+    uint32_t n    = lauxh_optuint32(L, 2, 0);
 
-    if( ( s->sem = sync_sem_alloc( n ) ) ){
-        lauxh_setmetatable( L, SYNC_SEMAPHORE_MT );
+    if ((s->sem = sync_sem_alloc(n))) {
+        lauxh_setmetatable(L, SYNC_SEMAPHORE_MT);
         return 1;
     }
 
-    lua_pushnil( L );
-    lua_pushstring( L, strerror( errno ) );
+    lua_pushnil(L);
+    lua_pushstring(L, strerror(errno));
 
     return 2;
 }
 
-
-LUALIB_API int luaopen_sync_semaphore( lua_State *L )
+LUALIB_API int luaopen_sync_semaphore(lua_State *L)
 {
     struct luaL_Reg mmethods[] = {
-        { "__tostring", tostring_lua },
-        { NULL, NULL }
+        {"__tostring", tostring_lua},
+        {NULL,         NULL        }
     };
     struct luaL_Reg methods[] = {
-        { "close", close_lua },
-        { "post", post_lua },
-        { "wait", wait_lua },
-        { "trywait", trywait_lua },
-        { NULL, NULL }
+        {"close",   close_lua  },
+        {"post",    post_lua   },
+        {"wait",    wait_lua   },
+        {"trywait", trywait_lua},
+        {NULL,      NULL       }
     };
 
-    sync_register( L, SYNC_SEMAPHORE_MT, mmethods, methods );
+    sync_register(L, SYNC_SEMAPHORE_MT, mmethods, methods);
 
     // add new function
-    lua_newtable( L );
-    lauxh_pushfn2tbl( L, "new", new_lua );
+    lua_newtable(L);
+    lauxh_pushfn2tbl(L, "new", new_lua);
 
     return 1;
 }
-
