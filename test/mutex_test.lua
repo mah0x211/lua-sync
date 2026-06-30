@@ -32,6 +32,20 @@ function testcase.destroy_releases_resources()
     assert.is_true(m:destroy())
 end
 
+function testcase.destroy_returns_true_when_already_destroyed()
+    local m = mutex.new()
+    assert.is_true(m:destroy())
+    assert.is_true(m:destroy())
+end
+
+function testcase.gc_unlocks_when_locked()
+    local m = mutex.new()
+    m:lock()
+    m = nil
+    collectgarbage('collect')
+    collectgarbage('collect')
+end
+
 function testcase.mutex_provides_exclusion_between_processes()
     local m = mutex.new()
     local p = assert(fork())
